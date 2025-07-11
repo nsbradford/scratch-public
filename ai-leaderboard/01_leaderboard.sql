@@ -10,8 +10,8 @@ DECLARE bot_list ARRAY<STRING> DEFAULT [
   'windsurf-bot[bot]',
   'qodo-merge-pro[bot]',
   'graphite-app[bot]',
-  'cursor[bot]', -- TODO: seems to also maybe use 'cursor-com[bot]' ?
-'copilot-pull-request-reviewer[bot]'
+  'cursor[bot]'
+--   'copilot-pull-request-reviewer[bot]' -- TODO doesn't seem to be working?
 ];
 
 -- 1️⃣  Pull only the months we need
