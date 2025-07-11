@@ -4,6 +4,11 @@ terraform {
   }
 }
 
+variable "project" {
+  description = "Google Cloud project ID that owns the BigQuery dataset"
+  type        = string
+}
+
 provider "google" {
   project = var.project
   region  = "us-central1"
