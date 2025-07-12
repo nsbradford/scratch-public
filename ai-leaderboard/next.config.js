@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['@google-cloud/bigquery']
-  }
+  serverExternalPackages: ['@google-cloud/bigquery']
 };
 
 module.exports = nextConfig;
