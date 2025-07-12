@@ -123,7 +123,8 @@ export default function LeaderboardChart() {
 
     Object.entries(stats.data.tools).forEach(([toolName, counts]) => {
       const countsArray = counts as number[];
-      const percentage = (countsArray[index] / stats.data.active_repos[index]) * 100;
+      const activeRepos = stats.data.active_repos[index];
+      const percentage = activeRepos > 0 ? (countsArray[index] / activeRepos) * 100 : 0;
       dataPoint[`${toolName}_pct`] = parseFloat(percentage.toFixed(1));
       dataPoint[toolName] = countsArray[index];
     });
