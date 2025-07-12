@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import type { LeaderboardData, LeaderboardStats, ToolRanking, DateRange } from '@/types/api';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const TOOL_COLORS = {
   "coderabbitai[bot]": "#8884d8",
@@ -134,7 +135,10 @@ export default function LeaderboardChart() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="text-center">
+      <div className="text-center relative">
+        <div className="absolute top-0 right-0">
+          <ThemeToggle />
+        </div>
         <h1 className="text-4xl font-bold mb-2">AI Code Review Tools Leaderboard</h1>
         <p className="text-muted-foreground">
           7-day rolling view of AI code review tool usage across active GitHub repositories
