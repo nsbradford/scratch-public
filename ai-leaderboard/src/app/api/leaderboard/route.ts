@@ -1,54 +1,87 @@
 import { NextResponse } from 'next/server';
 import type { LeaderboardData } from '@/types/api';
+import { getSnapshotsInDateRange } from '@/lib/database';
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const startDate = searchParams.get('startDate');
-  const endDate = searchParams.get('endDate');
-  
-  const now = Math.floor(Date.now() / 1000);
-  const twoYearsAgo = now - (2 * 365 * 24 * 60 * 60);
-  
-  const start = startDate ? Math.floor(new Date(startDate).getTime() / 1000) : twoYearsAgo;
-  const end = endDate ? Math.floor(new Date(endDate).getTime() / 1000) : now;
-  
-  const oneDayInSeconds = 24 * 60 * 60;
-  const timestamps: number[] = [];
-  const dayCount = Math.ceil((end - start) / oneDayInSeconds);
-  
-  for (let i = 0; i < dayCount; i++) {
-    timestamps.push(start + (i * oneDayInSeconds));
-  }
-
-  const generateTrendingData = (baseValue: number, trend: number, volatility: number) => {
-    return timestamps.map((_, index) => {
-      const trendValue = baseValue + (trend * index / dayCount);
-      const noise = (Math.random() - 0.5) * volatility;
-      return Math.max(0, Math.round(trendValue + noise));
-    });
-  };
-
-  const active_repos = timestamps.map((_, index) => {
-    const baseRepos = 800;
-    const growth = 1200; // Total growth over period
-    const trendValue = baseRepos + (growth * index / dayCount);
-    const noise = (Math.random() - 0.5) * 100;
-    return Math.max(500, Math.round(trendValue + noise));
-  });
-
-  const data: LeaderboardData = {
-    timestamps,
-    active_repos,
-    tools: {
-      "github-actions[bot]": generateTrendingData(300, 400, 50),
-      "dependabot[bot]": generateTrendingData(250, 200, 40),
-      "renovate[bot]": generateTrendingData(120, 150, 30),
-      "coderabbitai[bot]": generateTrendingData(80, 180, 25),
-      "codecov[bot]": generateTrendingData(70, 120, 20),
-      "sonarcloud[bot]": generateTrendingData(50, 80, 15),
-      "ellipsis-dev[bot]": generateTrendingData(30, 70, 12)
+  try {
+    const { searchParams } = new URL(request.url);
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    
+    const defaultEndDate = new Date().toISOString().split('T')[0];
+    const defaultStartDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    const queryStartDate = startDate || defaultStartDate;
+    const queryEndDate = endDate || defaultEndDate;
+    
+    let snapshots = [];
+    try {
+      snapshots = await getSnapshotsInDateRange(queryStartDate, queryEndDate);
+    } catch (dbError) {
+      console.warn('Database connection failed, returning empty data:', dbError);
+      return NextResponse.json({
+        timestamps: [],
+        active_repos: [],
+        tools: {}
+      });
     }
-  };
+    
+    if (snapshots.length === 0) {
+      return NextResponse.json({
+        timestamps: [],
+        active_repos: [],
+        tools: {}
+      });
+    }
 
-  return NextResponse.json(data);
+    const dateMap = new Map<string, Map<string, any>>();
+    const allTools = new Set<string>();
+    
+    for (const snapshot of snapshots) {
+      const dateKey = snapshot.date;
+      if (!dateMap.has(dateKey)) {
+        dateMap.set(dateKey, new Map());
+      }
+      
+      const dayData = dateMap.get(dateKey)!;
+      dayData.set('total_active_repos', snapshot.total_active_repos);
+      dayData.set(snapshot.tool, snapshot.repo_count);
+      allTools.add(snapshot.tool);
+    }
+
+    const sortedDates = Array.from(dateMap.keys()).sort();
+    const timestamps = sortedDates.map(date => Math.floor(new Date(date).getTime() / 1000));
+    
+    const active_repos: number[] = [];
+    const tools: Record<string, number[]> = {};
+    
+    for (const tool of allTools) {
+      tools[tool] = [];
+    }
+    
+    for (const date of sortedDates) {
+      const dayData = dateMap.get(date)!;
+      const totalActiveRepos = dayData.get('total_active_repos') || 0;
+      active_repos.push(totalActiveRepos);
+      
+      for (const tool of allTools) {
+        const toolCount = dayData.get(tool) || 0;
+        tools[tool].push(toolCount);
+      }
+    }
+
+    const data: LeaderboardData = {
+      timestamps,
+      active_repos,
+      tools
+    };
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error fetching leaderboard data:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch leaderboard data' },
+      { status: 500 }
+    );
+  }
 }
