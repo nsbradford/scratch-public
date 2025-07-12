@@ -30,12 +30,12 @@
 
 1. Install dependencies:
    ```bash
-   npm install
+   pnpm install
    ```
 
 2. Initialize the database:
    ```bash
-   npm run setup-db
+   pnpm run setup-db
    ```
 
 ## Usage
@@ -46,23 +46,23 @@
 
 Backfill the last 7 days:
 ```bash
-npm run backfill
+pnpm run backfill
 ```
 
 Backfill the last 30 days:
 ```bash
-npm run backfill 30
+pnpm run backfill 30
 ```
 
 Backfill a specific date range:
 ```bash
-npm run backfill 2024-01-01 2024-01-31
+pnpm run backfill 2024-01-01 2024-01-31
 ```
 
 ### Run the Application
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Then open [http://localhost:3000](http://localhost:3000) in your browser.
@@ -71,7 +71,7 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser.
 
 To test the API endpoint:
 ```bash
-npm run test-api
+pnpm run test-api
 ```
 
 ## Database Schema
