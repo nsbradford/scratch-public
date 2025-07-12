@@ -53,14 +53,23 @@ export default function LeaderboardChart() {
         }
         const data: LeaderboardData = await response.json();
         
+        if (data.active_repos.length === 0 || Object.keys(data.tools).length === 0) {
+          setStats({
+            total_active_repos: 0,
+            rankings: [],
+            data
+          });
+          return;
+        }
+        
         const latestIndex = data.active_repos.length - 1;
-        const totalActiveRepos = data.active_repos[latestIndex];
+        const totalActiveRepos = data.active_repos[latestIndex] || 0;
         
         const rankings: ToolRanking[] = Object.entries(data.tools)
           .map(([name, counts]) => {
             const countsArray = counts as number[];
-            const currentCount = countsArray[latestIndex];
-            const percentage = (currentCount / totalActiveRepos) * 100;
+            const currentCount = countsArray[latestIndex] || 0;
+            const percentage = totalActiveRepos > 0 ? (currentCount / totalActiveRepos) * 100 : 0;
             const previousCount = countsArray[latestIndex - 1] || currentCount;
             
             let trend: 'up' | 'down' | 'stable' = 'stable';
@@ -108,6 +117,34 @@ export default function LeaderboardChart() {
   }
 
   if (!stats) return null;
+
+  if (stats.data.timestamps.length === 0) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-2">AI Code Review Tools Leaderboard</h1>
+          <p className="text-muted-foreground">
+            7-day rolling view of AI code review tool usage across active GitHub repositories
+          </p>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center text-muted-foreground">
+              <p className="text-lg mb-2">No data available for the selected date range</p>
+              <p className="text-sm">
+                This could be because:
+              </p>
+              <ul className="text-sm mt-2 space-y-1">
+                <li>• No data has been backfilled yet</li>
+                <li>• The database connection is not configured</li>
+                <li>• The selected date range has no data</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const chartData: ChartDataPoint[] = stats.data.timestamps.map((timestamp, index) => {
     const date = new Date(timestamp * 1000).toLocaleDateString('en-US', { 
